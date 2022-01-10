@@ -1,52 +1,55 @@
 
-from rest_framework.fields import JSONField
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework.decorators import api_view
 
-from .models import Todo
+from .models import Task
 # from rest_framework import viewsets
-from .serializers import TodoSerializer
+from .serializers import TaskSerializer
 
+@api_view(['GET'])
+def apiOverView(request):
+    api_urls = {
+        'List': '/task-list',
+        'Detail View': '/task-detail/<str:pk>/',
+        'List': '/task-list',
+    }
+    return Response(api_urls)
 
-class TodoViewSet(APIView):
-    def get(self, request):
-        todos = Todo.objects.all()
-        serializer = TodoSerializer(todos, many = True)
-        return Response({"todos": serializer.data})
+@api_view(['GET'])
+def TaskList(request):
+    tasks = Task.objects.all()
+    print('task \n', tasks)
+    serializer = TaskSerializer(tasks, many = True)
+    return Response(serializer.data)
 
-    def get_object(self, pk):
-        try:
-            return Todo.objects.get(pk=pk)
-        except Todo.DoesNotExist:
-            raise status.HTTP_404_NOT_FOUND
-    
-    # def get(self, request, pk, format=None):
-    #     snippet = self.get_object(pk)
-    #     serializer = TodoSerializer(snippet)
-    #     return Response(serializer.data)
-    
-    def post(self, request, format=None):
-        serializer = TodoSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET'])
+def TaskDetail(request, pk):
+    tasks = Task.objects.get(id = pk)
+    print('task \n', tasks)
+    serializer = TaskSerializer(tasks, many = False)
+    print('serializer.data \n', serializer.data)
+    return Response(serializer.data)
 
-    def put(self, request, pk):
-        todo = self.get_object(pk)
-        serializer = TodoSerializer(todo, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+def TaskCreate(request):
+    serializer = TaskSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
 
-    def delete(self, request, pk, format=None):
-        todo = self.get_object(pk)
-        todo.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(serializer.data)
 
+@api_view(['POST'])
+def TaskUpdate(request, pk):
+    task = Task.objects.get(id = pk)
+    serializer = TaskSerializer(instance=task, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        
+    return Response(serializer.data)
 
-# class TodoViewSet(viewsets.ModelViewSet):
-#     serializer_class = TodoSerializer
-#     queryset = Todo.objects.all()
+@api_view(['DELETE'])
+def TaskDelete(request, pk):
+    task = Task.objects.get(id = pk)
+    task.delete()
+        
+    return Response("Deleted success")
